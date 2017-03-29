@@ -4,26 +4,37 @@ var expect = require('expect');
 var app = require('./post').app;
 var {Todo} = require('../../models/todo');
 
+var todos = [
+    {
+        text: "todo1"
+    },
+    {
+        text: "todo2"
+    }
+];
+
 beforeEach((done)=>{
-    Todo.remove({}).then(()=>done());
+    Todo.remove({}).then(()=>{
+        return Todo.insertMany(todos);
+    }).then(()=>done());
 });
 
 describe('Post',()=>{
     it('Should get a valid todo',(done)=>{
         request(app)
          .post('/todos')
-         .send({text:'todo1'})
+         .send({text:'todo3'})
          .expect(200)
          .expect((res)=>{
-            expect(res.body.text).toBe('todo1');   
+            expect(res.body.text).toBe('todo3');   
          })
          .end((err,res)=>{
             if(err){
                 return done(err);
             }
-            Todo.find().then((todos)=>{
+            Todo.find({text:'todo3'}).then((todos)=>{
                 expect(todos.length).toBe(1);
-                expect(todos[0].text).toBe('todo1');
+                expect(todos[0].text).toBe('todo3');
                 done();
             }).catch((e)=> done(e));
             
@@ -41,7 +52,7 @@ describe('Post',()=>{
            }
             
            Todo.find().then((todos)=>{
-               expect(todos.length).toBe(0);
+               expect(todos.length).toBe(2);
                done();
            }).catch((e)=> done(e))    
             
