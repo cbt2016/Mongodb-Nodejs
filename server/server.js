@@ -6,6 +6,7 @@ require('../config/config');
 const {mongoose} = require('../db/mongoose');
 const {Todo} = require('../models/todo');
 const {User} = require('../models/user');
+const {authenticate} = require('../middleware/authenticate');
 
 const port = process.env.PORT;
 console.log('MONGODB_URI **' ,process.env.MONGODB_URI);
@@ -96,6 +97,12 @@ app.post('/users',(req,res)=>{
         res.header('x-auth',token).send(newUser);
     }).catch((e)=> res.status(400).send(e.message));
     
+});
+
+
+
+app.get('/users/me',authenticate,(req,res)=>{
+    res.send(req.user);
 });
 
 app.listen(port,()=>{
