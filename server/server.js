@@ -1,13 +1,14 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var {ObjectID} = require('mongodb');
+const express = require('express');
+const bodyParser = require('body-parser');
+const _ = require('lodash');
+const {ObjectID} = require('mongodb');
+require('../config/config');
+const {mongoose} = require('../db/mongoose');
+const {Todo} = require('../models/todo');
+const {User} = require('../models/user');
 
-var {mongoose} = require('../db/mongoose');
-var {Todo} = require('../models/todo');
-
-
-const port = process.env.PORT || 3000;
-
+const port = process.env.PORT;
+console.log('MONGODB_URI **' ,process.env.MONGODB_URI);
 var app = express();
 
 app.use(bodyParser.json());
@@ -36,13 +37,64 @@ app.get('/todos/:id',(req,res)=>{
     }else{
         Todo.findById(id).then((todo)=>{
             if(!todo){
-                return res.status(404).send();
+                return res.status(404).send('todo not found');
             }
             res.send({todo});
         },(err)=>{
             res.status(404).send(err.message);
         });
     }
+    
+});
+
+app.delete('/todos/:id',(req,res)=>{
+    var id = req.params.id;
+    
+    if(!ObjectID.isValid(id)){
+        return res.status(400).send();
+    }else{
+        Todo.findOneAndRemove({_id:id}).then((todo)=>{
+            if(!todo){
+                return res.status(404).send();
+            }
+            res.send(todo);
+        });
+    }
+});
+
+app.patch('/todos/:id',(req,res)=>{
+    var id = req.params.id;
+    var body = _.pick(req.body, ['text','completed']);
+    
+    if(!ObjectID.isValid(id)){
+        return res.status(404).send('Bad Request');
+    }
+    
+    if(_.isBoolean(body.completed) && body.completed){
+        body.completedAt = new Date().getTime();
+    }else{
+        body.completed = false;
+        body.completedAt = null;
+    }
+    
+    Todo.findByIdAndUpdate(id,{$set:body},{new: true}).then((todo)=>{
+        if(!todo){
+            return res.status(400).send('Nothing to Update');
+        }
+        
+        res.status(200).send({todo});
+    });
+       
+});
+
+app.post('/users',(req,res)=>{
+    var body = _.pick(req.body,['email','password']);
+    var newUser = new User(body);
+    newUser.save().then(()=>{
+        return newUser.generateAuthToken();
+    }).then((token) =>{
+        res.header('x-auth',token).send(newUser);
+    }).catch((e)=> res.status(400).send(e.message));
     
 });
 

@@ -4,16 +4,19 @@ var expect = require('expect');
 var app = require('./post').app;
 var {Todo} = require('../../models/todo');
 
-var todos = [
-    {
-        text: "todo1"
-    },
-    {
-        text: "todo2"
-    }
-];
+var todos = {text: "todo1",completed:true};
 
-beforeEach((done)=>{
+describe('Post',()=>{
+    it('should save todo to database test',(done)=>{
+        request(app)
+            .post('/todos')
+            .send({todos})
+            .expect(200)
+            .end(done)
+    });
+});
+
+/*beforeEach((done)=>{
     Todo.remove({}).then(()=>{
         return Todo.insertMany(todos);
     }).then(()=>done());
@@ -59,4 +62,4 @@ describe('Post',()=>{
          })
          
     });
-});
+});*/
